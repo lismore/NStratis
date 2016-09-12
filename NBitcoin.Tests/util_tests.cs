@@ -18,7 +18,7 @@ namespace NBitcoin.Tests
 		[Trait("Core", "Core")]
 		public void util_MedianFilter()
 		{
-			MedianFilterInt32 filter = new MedianFilterInt32(5, 15);
+			var filter = new MedianFilterInt32(5, 15);
 
 			AssertEx.Equal(filter.Median, 15);
 
@@ -68,7 +68,7 @@ namespace NBitcoin.Tests
 		public void CanAddEntropyToRandom()
 		{
 			RandomUtils.AddEntropy(new byte[] { 1, 2, 3 });
-			for(int i = 0; i < 100; i++)
+			for(var i = 0; i < 100; i++)
 			{
 				Assert.Equal(50, RandomUtils.GetBytes(50).Length);
 			}
@@ -190,8 +190,8 @@ namespace NBitcoin.Tests
 		[Trait("UnitTest", "UnitTest")]
 		public void MoneyCoverage()
 		{
-			Money a = Money.Coins(2.0m);
-			Money b = Money.Coins(4.0m);
+			var a = Money.Coins(2.0m);
+			var b = Money.Coins(4.0m);
 			Assert.Equal(a, Money.Min(a, b));
 			Assert.Equal(a, Money.Min(b, a));
 			Assert.Equal(b, Money.Max(a, b));
@@ -246,11 +246,11 @@ namespace NBitcoin.Tests
 		[Trait("Core", "Core")]
 		public void util_ParseMoney()
 		{
-			Money ret;
-			foreach(var prefix in new string[] { "", "+", "-" })
+		    foreach(var prefix in new string[] { "", "+", "-" })
 			{
-				int multiplier = prefix == "-" ? -1 : 1;
-				Assert.True(Money.TryParse(prefix + "0.0", out ret));
+				var multiplier = prefix == "-" ? -1 : 1;
+			    Money ret;
+			    Assert.True(Money.TryParse(prefix + "0.0", out ret));
 				AssertEx.Equal(ret, multiplier * new Money(0));
 
 				Assert.True(Money.TryParse(prefix + "12345.6789", out ret));
@@ -328,7 +328,7 @@ namespace NBitcoin.Tests
 		public void CanSplitMoneyBag()
 		{
 			var gold = new AssetId(new Key());
-			MoneyBag bag = new MoneyBag();
+			var bag = new MoneyBag();
 			bag += Money.Coins(12);
 			bag += new AssetMoney(gold, 10);
 			var splitted = bag.Split(12).ToArray();
@@ -358,7 +358,7 @@ namespace NBitcoin.Tests
 
 		private void CanSplitAssetMoneyCore(AssetId asset, long amount, int parts)
 		{
-			AssetMoney money = new AssetMoney(asset, amount);
+			var money = new AssetMoney(asset, amount);
 			var splitted = money.Split(parts).ToArray();
 			Assert.True(splitted.Length == parts);
 			Assert.True(splitted.Sum(asset) == money);
@@ -371,16 +371,46 @@ namespace NBitcoin.Tests
 		[Trait("UnitTest", "UnitTest")]
 		public void MoneyUnitSanityCheck()
 		{
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, MoneyUnit.BTC));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, MoneyUnit.MilliBTC));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, MoneyUnit.Bit));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, MoneyUnit.Satoshi));
+            // Act
+            var exBtc = Record.Exception(() => Money.FromUnit(10m, MoneyUnit.BTC));
+            // Assert
+            Assert.IsType<ArgumentException>(exBtc);
 
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, (MoneyUnit)100000000));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, (MoneyUnit)100000));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, (MoneyUnit)100));
-			Assert.DoesNotThrow(() => Money.FromUnit(10m, (MoneyUnit)1));
+            // Act
+            var exMilliBtc = Record.Exception(() => Money.FromUnit(10m, MoneyUnit.MilliBTC));
+            // Assert
+            Assert.IsType<ArgumentException>(exMilliBtc);
 
+            // Act
+            var exBit = Record.Exception(() => Money.FromUnit(10m, MoneyUnit.Bit));
+            // Assert
+            Assert.IsType<ArgumentException>(exBit);
+
+            // Act
+            var exSatoshi = Record.Exception(() => Money.FromUnit(10m, MoneyUnit.Satoshi));
+            // Assert
+            Assert.IsType<ArgumentException>(exSatoshi);
+
+            // Act
+            var exOneHundredMillion = Record.Exception(() => Money.FromUnit(10m, (MoneyUnit)100000000));
+            // Assert
+            Assert.IsType<ArgumentException>(exOneHundredMillion);
+
+            // Act
+            var exOneHundredThousand = Record.Exception(() => Money.FromUnit(10m, (MoneyUnit)100000));
+            // Assert
+            Assert.IsType<ArgumentException>(exOneHundredThousand);
+
+            // Act
+            var exOneHundred = Record.Exception(() => Money.FromUnit(10m, (MoneyUnit)100));
+            // Assert
+            Assert.IsType<ArgumentException>(exOneHundred);
+
+            // Act
+            var exOne = Record.Exception(() => Money.FromUnit(10m, (MoneyUnit)100));
+            // Assert
+            Assert.IsType<ArgumentException>(exOne);
+            
 			Assert.Throws<ArgumentException>(() => Money.FromUnit(10, (MoneyUnit)14));
 			Assert.Throws<ArgumentException>(() => Money.FromUnit(10, (MoneyUnit)(-41)));
 		}
@@ -636,11 +666,9 @@ namespace NBitcoin.Tests
 					Network.CreateFromBase58Data(test.Base58, test.Network);
 
 					if(test.Network != null)
-						foreach(var network in Network.GetNetworks())
+						foreach (var network in Network.GetNetworks().TakeWhile(network => network != test.Network))
 						{
-							if(network == test.Network)
-								break;
-							Assert.Throws<FormatException>(() => Network.CreateFromBase58Data(test.Base58, network));
+						    Assert.Throws<FormatException>(() => Network.CreateFromBase58Data(test.Base58, network));
 						}
 				}
 			}
